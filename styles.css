@@ -1,53 +1,111 @@
 body {
-    background-color: #f8f9fa;
+    background-color: #f5f7fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
 }
 
 .card {
     border: none;
     border-radius: 10px;
     overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .card-header {
-    border-radius: 10px 10px 0 0 !important;
-    padding: 1rem 1.25rem;
-}
-
-.table th {
+    border-radius: 0 !important;
+    padding: 0.75rem 1.25rem;
     font-weight: 600;
-    border-top: none;
+}
+
+.card-body {
+    flex: 1;
+    overflow: auto;
+}
+
+/* Estilos para el editor SQL */
+#sqlQuery {
+    font-family: 'Fira Code', 'Courier New', monospace;
+    resize: none;
+    min-height: 300px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+/* Estilos para la tabla de resultados */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
     background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
 }
 
-.table-hover tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.05);
-    cursor: pointer;
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
 }
 
-.status-badge {
-    padding: 0.35em 0.65em;
-    font-size: 0.75em;
-    font-weight: 700;
-    border-radius: 0.25rem;
+/* Estilos para el contenedor de resultados */
+#resultsContainer {
+    max-height: 60vh;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
 }
 
-.status-completed {
-    background-color: #d1e7dd;
-    color: #0f5132;
+/* Estilos para los mensajes de estado */
+.query-message {
+    font-family: monospace;
+    white-space: pre-wrap;
+    margin-bottom: 0;
 }
 
-.status-pending {
-    background-color: #fff3cd;
-    color: #664d03;
+/* Estilos para el pie de página */
+.card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 0.5rem 1.25rem;
 }
 
-.status-failed {
-    background-color: #f8d7da;
-    color: #842029;
+/* Estilos para el editor de código */
+.CodeMirror {
+    height: 100%;
+    min-height: 300px;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
 }
 
-#pageInfo {
+/* Estilos para los botones */
+.btn {
     font-weight: 500;
+    padding: 0.375rem 1rem;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    #sqlQuery {
+        min-height: 200px;
+    }
+}
+
+/* Estilos para el contador de filas y tiempo */
+.query-stats {
+    font-size: 0.8rem;
     color: #6c757d;
 }
