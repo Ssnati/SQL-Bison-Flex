@@ -219,24 +219,34 @@ function clearEditor() {
     document.getElementById('queryTime').textContent = 'Tiempo de ejecución: 0ms';
 }
 
-// Variables para el seguimiento del archivo
-let lastFileContent = '';
+// Variables para el seguimiento del estado
 let lastModifiedTime = 0;
-let fileHandle = null;
 let fileChangeInterval = null;
+let queriesHistory = [];
+let currentQuery = '';
 
-// Función para leer el archivo de consultas
-async function readQueryFile() {
+// Función para cargar el historial de consultas
+async function loadQueriesHistory() {
     try {
+        updateFileStatus('Cargando historial...', 'info');
         const response = await fetch('/api/queries');
-        if (!response.ok) throw new Error('No se pudo cargar el archivo de consultas');
+        if (!response.ok) throw new Error('No se pudo cargar el historial');
         
         const data = await response.json();
-        return data.content;
+        queriesHistory = data.queries || [];
+        updateQueriesHistory();
+        
+        if (queriesHistory.length > 0) {
+            currentQuery = queriesHistory[queriesHistory.length - 1];
+            editor.setValue(currentQuery);
+            updateFileStatus('Historial cargado', 'success');
+            return currentQuery;
+        }
+        return '';
     } catch (error) {
-        console.error('Error al leer el archivo de consultas:', error);
-        showError('Error al leer el archivo de consultas: ' + error.message);
-        return null;
+        console.error('Error al cargar el historial:', error);
+        updateFileStatus('Error al cargar historial', 'danger');
+        return '';
     }
 }
 
@@ -254,8 +264,8 @@ function getLastQuery(content) {
     return lines[lines.length - 1] || '';
 }
 
-// Función para verificar cambios en el archivo
-async function checkForFileChanges() {
+// Función para verificar si hay nuevas consultas
+async function checkForNewQueries() {
     try {
         const response = await fetch(`/api/queries/check?t=${new Date().getTime()}`);
         if (!response.ok) return false;
@@ -264,38 +274,52 @@ async function checkForFileChanges() {
         
         if (data.lastModified > lastModifiedTime) {
             lastModifiedTime = data.lastModified;
-            return true;
+            
+            // Si hay una nueva consulta, actualizar el historial
+            if (data.lastQuery && data.lastQuery !== currentQuery) {
+                currentQuery = data.lastQuery;
+                await loadQueriesHistory();
+                return true;
+            }
         }
         return false;
     } catch (error) {
-        console.error('Error al verificar cambios en el archivo:', error);
+        console.error('Error al verificar consultas:', error);
         return false;
     }
 }
 
-// Función para actualizar el editor con la última consulta
-async function updateEditorWithLatestQuery() {
+// Función para ejecutar la consulta actual
+async function executeCurrentQuery() {
+    const query = editor.getValue().trim();
+    if (!query) return;
+    
     try {
-        updateFileStatus('Leyendo archivo...', 'info');
-        const content = await readQueryFile();
+        updateFileStatus('Guardando consulta...', 'info');
         
-        if (content === null) {
-            updateFileStatus('Error al leer', 'danger');
-            return;
+        // Guardar la consulta en el servidor
+        const response = await fetch('/api/queries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar la consulta');
         }
         
-        const lastQuery = getLastQuery(content);
-        if (lastQuery) {
-            editor.setValue(lastQuery);
-            // Actualizar la interfaz
-            updateLastUpdated();
-            updateFileStatus('Archivo cargado', 'success');
-            // Ejecutar la consulta automáticamente
-            executeQuery();
-        }
+        // Actualizar el historial
+        const data = await response.json();
+        queriesHistory = data.queries;
+        updateQueriesHistory();
+        
+        // Ejecutar la consulta
+        executeQuery();
+        updateFileStatus('Consulta guardada', 'success');
     } catch (error) {
-        console.error('Error al actualizar el editor:', error);
-        updateFileStatus('Error al actualizar', 'danger');
+        console.error('Error al guardar la consulta:', error);
+        updateFileStatus('Error al guardar', 'danger');
     }
 }
 
@@ -333,58 +357,73 @@ function updateLastUpdated() {
     }
 }
 
-// Función para abrir el archivo en el editor predeterminado
-async function openFileInEditor() {
-    try {
-        if (!window.showOpenFilePicker) {
-            // Si la API de File System Access no está disponible
-            window.open('queries.sql', '_blank');
-            return;
-        }
-        
-        fileHandle = await window.showOpenFilePicker({
-            types: [{
-                description: 'Archivos SQL',
-                accept: {'text/plain': ['.sql']}
-            }],
-            multiple: false
-        });
-        
-        const file = await fileHandle[0].getFile();
-        const content = await file.text();
-        
-        // Actualizar el contenido del archivo local
-        await saveToFile('queries.sql', content);
-        
-        // Actualizar la interfaz
-        document.getElementById('fileName').textContent = file.name;
-        await updateEditorWithLatestQuery();
-        
-    } catch (error) {
-        console.error('Error al abrir el archivo:', error);
-        updateFileStatus('Error al abrir', 'danger');
+// Función para actualizar la interfaz del historial de consultas
+function updateQueriesHistory() {
+    const historyList = document.getElementById('queriesHistory');
+    const queryCountElement = document.getElementById('queryCount');
+    
+    if (!historyList || !queryCountElement) return;
+    
+    // Actualizar el contador de consultas
+    queryCountElement.textContent = queriesHistory.length;
+    
+    // Si no hay consultas, mostrar mensaje
+    if (queriesHistory.length === 0) {
+        historyList.innerHTML = `
+            <li class="list-group-item text-muted text-center py-4">
+                <i class="bi bi-clock-history d-block mb-2" style="font-size: 2rem;"></i>
+                No hay consultas en el historial
+            </li>`;
+        return;
     }
-}
-
-// Función para guardar contenido en un archivo
-async function saveToFile(filename, content) {
-    try {
-        const response = await fetch('/api/queries', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ content })
+    
+    // Limpiar la lista
+    historyList.innerHTML = '';
+    
+    // Agregar cada consulta al historial (las más recientes primero)
+    [...queriesHistory].reverse().forEach((query, index) => {
+        const li = document.createElement('li');
+        li.className = 'query-item' + (query === currentQuery ? ' active' : '');
+        
+        // Crear un elemento de texto con la consulta
+        const queryText = document.createElement('div');
+        queryText.className = 'query-text';
+        queryText.textContent = query;
+        
+        // Agregar ícono de consulta
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-arrow-return-right me-2 text-muted';
+        
+        // Agregar elementos al elemento de la lista
+        li.appendChild(icon);
+        li.appendChild(queryText);
+        
+        // Al hacer clic en una consulta anterior, cargarla en el editor
+        li.addEventListener('click', () => {
+            // Actualizar la consulta actual
+            currentQuery = query;
+            editor.setValue(query);
+            
+            // Actualizar las clases activas
+            document.querySelectorAll('.query-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            li.classList.add('active');
+            
+            // Ejecutar la consulta automáticamente
+            executeQuery();
         });
         
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al guardar el archivo');
-        }
-        
-        return true;
-    } catch (error) {
-        console.error('Error al guardar el archivo:', error);
-        updateFileStatus('Error al guardar', 'danger');
-        return false;
+        historyList.appendChild(li);
+    });
+    
+    // Mostrar mensaje si no hay consultas
+    if (queriesHistory.length === 0) {
+        historyList.innerHTML = `
+            <li class="list-group-item text-muted text-center py-4">
+                <i class="bi bi-clock-history d-block mb-2" style="font-size: 2rem;"></i>
+                No hay consultas en el historial
+            </li>`;
     }
 }
 
@@ -395,26 +434,30 @@ async function initApp() {
         initCodeEditor();
         
         // Configurar eventos
-        document.getElementById('executeQuery').addEventListener('click', updateEditorWithLatestQuery);
-        document.getElementById('openFile').addEventListener('click', openFileInEditor);
+        document.getElementById('executeQuery').addEventListener('click', executeCurrentQuery);
         
         // Inicializar la base de datos
         const dbInitialized = await initDatabase();
         
         if (dbInitialized) {
-            // Cargar y ejecutar la última consulta
-            await updateEditorWithLatestQuery();
+            // Cargar el historial de consultas
+            await loadQueriesHistory();
             
-            // Verificar cambios en el archivo cada 2 segundos
+            // Si hay consultas previas, ejecutar la última
+            if (currentQuery) {
+                executeQuery();
+            }
+            
+            // Verificar nuevas consultas cada 2 segundos
             fileChangeInterval = setInterval(async () => {
                 try {
-                    const hasChanges = await checkForFileChanges();
-                    if (hasChanges) {
-                        console.log('Archivo modificado, actualizando...');
-                        await updateEditorWithLatestQuery();
+                    const hasNewQuery = await checkForNewQueries();
+                    if (hasNewQuery) {
+                        console.log('Nueva consulta detectada, ejecutando...');
+                        executeQuery();
                     }
                 } catch (error) {
-                    console.error('Error al verificar cambios:', error);
+                    console.error('Error al verificar consultas:', error);
                 }
             }, 2000);
         }

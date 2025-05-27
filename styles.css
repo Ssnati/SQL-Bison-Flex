@@ -109,3 +109,75 @@ body {
     font-size: 0.8rem;
     color: #6c757d;
 }
+
+/* Estilos para el historial de consultas */
+#queriesHistory {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#queriesHistory .query-item {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.2s;
+}
+
+#queriesHistory .query-item:hover {
+    background-color: #f8f9fa;
+}
+
+#queriesHistory .query-item.active {
+    background-color: #e9ecef;
+    border-left: 3px solid #007bff;
+    padding-left: calc(1.25rem - 3px);
+}
+
+#queriesHistory .query-item:last-child {
+    border-bottom: none;
+}
+
+/* Estilos para el estado del archivo */
+#fileStatus {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+/* Estilos para la tarjeta de historial */
+.history-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.history-card .card-body {
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Ajustes responsivos para el historial */
+@media (max-width: 768px) {
+    .history-card {
+        margin-top: 1rem;
+        height: auto;
+        max-height: 300px;
+    }
+    
+    #queriesHistory {
+        max-height: 250px;
+    }
+}
