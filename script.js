@@ -379,11 +379,14 @@ function updateQueriesHistory() {
         return;
     }
     
+    // Limitar el historial a 7 elementos
+    const limitedHistory = queriesHistory.slice(-7);
+    
     // Limpiar la lista
     historyList.innerHTML = '';
     
     // Agregar cada consulta al historial (las más recientes primero)
-    [...queriesHistory].reverse().forEach((query, index) => {
+    [...limitedHistory].reverse().forEach((query, index) => {
         const li = document.createElement('li');
         li.className = 'query-item' + (query === currentQuery ? ' active' : '');
         
@@ -429,6 +432,26 @@ function updateQueriesHistory() {
     }
 }
 
+// Función para alternar la visibilidad del historial
+function toggleHistory() {
+    const historyContainer = document.querySelector('.history-container');
+    const toggleButton = document.getElementById('toggleHistory');
+    
+    if (!historyContainer || !toggleButton) return;
+    
+    // Alternar la clase 'visible' para mostrar/ocultar el historial
+    const isVisible = historyContainer.classList.toggle('visible');
+    
+    // Actualizar el ícono y el texto del botón
+    if (isVisible) {
+        toggleButton.innerHTML = '<i class="bi bi-chevron-up me-1"></i> Ocultar historial';
+        // Asegurarse de que el historial esté actualizado cuando se muestra
+        loadQueriesHistory();
+    } else {
+        toggleButton.innerHTML = '<i class="bi bi-chevron-down me-1"></i> Mostrar historial';
+    }
+}
+
 // Inicializar la aplicación
 async function initApp() {
     try {
@@ -437,6 +460,7 @@ async function initApp() {
         
         // Configurar eventos
         document.getElementById('executeQuery').addEventListener('click', executeCurrentQuery);
+        document.getElementById('toggleHistory').addEventListener('click', toggleHistory);
         
         // Inicializar la base de datos
         const dbInitialized = await initDatabase();

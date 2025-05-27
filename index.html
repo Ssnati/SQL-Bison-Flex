@@ -20,82 +20,90 @@
         </div>
         
         <div class="row g-3">
-            <!-- Panel de consulta SQL -->
-            <div class="col-md-7">
-                <div class="card shadow h-100">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Editor SQL</h5>
-                        <div class="file-info d-flex align-items-center">
-                            <span id="fileStatus" class="ms-2">Listo</span>
+            <!-- Panel de consulta SQL y resultados -->
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    <!-- Editor SQL -->
+                    <div class="col-12">
+                        <div class="card shadow">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Editor SQL</h5>
+                                <div class="file-info d-flex align-items-center">
+                                    <span id="fileStatus" class="ms-2">Listo</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3" style="min-height: 200px;">
+                                    <textarea id="sqlQuery" class="form-control" style="min-height: 150px;" placeholder="Escribe tu consulta SQL aquí..."></textarea>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <button id="executeQuery" class="btn btn-primary me-2">
+                                            <i class="bi bi-play-fill me-1"></i> Ejecutar consulta
+                                        </button>
+                                        <button id="toggleHistory" class="btn btn-outline-secondary">
+                                            <i class="bi bi-clock-history me-1"></i> Mostrar historial
+                                        </button>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <span id="lastUpdated"></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-body d-flex flex-column h-100">
-                        <div class="mb-3 flex-grow-1">
-                            <textarea id="sqlQuery" class="form-control h-100" placeholder="Escribe tu consulta SQL aquí..."></textarea>
-                        </div>
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
-                            <button id="executeQuery" class="btn btn-primary">
-                                <i class="bi bi-play-fill me-1"></i> Ejecutar consulta
-                            </button>
-                            <div class="text-muted small">
-                                <span id="lastUpdated"></span>
+                    
+                    <!-- Historial de consultas (debajo del editor) -->
+                    <div class="col-12">
+                        <div class="history-container">
+                            <div class="card shadow">
+                                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Historial de Consultas</h5>
+                                    <span class="badge bg-light text-dark">
+                                        <span id="queryCount">0</span> consultas
+                                    </span>
+                                </div>
+                                <div class="card-body p-0">
+                                    <ul id="queriesHistory" class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                                        <li class="list-group-item text-muted text-center py-4">
+                                            <i class="bi bi-clock-history d-block mb-2" style="font-size: 2rem;"></i>
+                                            El historial de consultas aparecerá aquí
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Historial de consultas -->
-            <div class="col-md-5">
-                <div class="card shadow h-100 history-card">
-                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Historial de Consultas</h5>
-                        <span class="badge bg-light text-dark">
-                            <span id="queryCount">0</span> consultas
-                        </span>
-                    </div>
-                    <div class="card-body p-0">
-                        <ul id="queriesHistory" class="list-group list-group-flush">
-                            <li class="list-group-item text-muted text-center py-4">
-                                <i class="bi bi-clock-history d-block mb-2" style="font-size: 2rem;"></i>
-                                El historial de consultas aparecerá aquí
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Panel de resultados -->
-            <div class="col-md-6">
+            <!-- Resultados de la consulta -->
+            <div class="col-lg-4">
                 <div class="card shadow h-100">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">Resultados</h5>
                     </div>
                     <div class="card-body p-0">
                         <div id="queryInfo" class="alert alert-info m-3 mb-0 d-none"></div>
+                        <div id="errorMessage" class="alert alert-danger m-3 mb-0 d-none"></div>
+                        <div id="noResults" class="alert alert-warning m-3 mb-0 d-none">No se encontraron resultados.</div>
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
-                                <thead id="resultsHeader">
-                                    <!-- Encabezados dinámicos -->
-                                </thead>
-                                <tbody id="resultsTable">
-                                    <!-- Resultados dinámicos -->
-                                </tbody>
+                                <thead id="resultsHeader"></thead>
+                                <tbody id="resultsTable"></tbody>
                             </table>
                         </div>
-                        <div id="noResults" class="text-center p-4 d-none">
-                            <p class="text-muted">No hay resultados para mostrar.</p>
-                        </div>
-                        <div id="errorMessage" class="alert alert-danger m-3 mb-0 d-none"></div>
                     </div>
-                    <div class="card-footer bg-light">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted" id="rowCount">0 filas</small>
-                            <small class="text-muted" id="queryTime">Tiempo de ejecución: 0ms</small>
+                    <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+                        <div class="query-stats">
+                            <span id="rowCount">0 filas</span> • 
+                            <span id="queryTime">Listo</span>
                         </div>
                     </div>
                 </div>
             </div>
+
+
         </div>
     </div>
 

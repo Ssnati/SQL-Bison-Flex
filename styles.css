@@ -111,6 +111,21 @@ body {
 }
 
 /* Estilos para el historial de consultas */
+.history-container {
+    transition: all 0.3s ease;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    margin-top: 0;
+}
+
+.history-container.visible {
+    max-height: 350px;
+    margin-top: 1rem;
+    opacity: 1;
+    display: block !important;
+}
+
 #queriesHistory {
     list-style: none;
     padding: 0;
@@ -120,11 +135,11 @@ body {
 }
 
 #queriesHistory .query-item {
-    padding: 0.75rem 1.25rem;
+    padding: 0.5rem 1rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     cursor: pointer;
     font-family: 'Fira Code', 'Courier New', monospace;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -138,11 +153,24 @@ body {
 #queriesHistory .query-item.active {
     background-color: #e9ecef;
     border-left: 3px solid #007bff;
-    padding-left: calc(1.25rem - 3px);
+    padding-left: calc(1rem - 3px);
 }
 
 #queriesHistory .query-item:last-child {
     border-bottom: none;
+}
+
+/* Estilos para el botón de alternar historial */
+#toggleHistory {
+    transition: all 0.2s;
+}
+
+#toggleHistory.collapsed .bi-chevron-up {
+    display: none;
+}
+
+#toggleHistory:not(.collapsed) .bi-chevron-down {
+    display: none;
 }
 
 /* Estilos para el estado del archivo */
