@@ -1,1 +1,5 @@
 SELECT * FROM users;
+SELECT * FROM users  where id > 5;
+select * from users;
+select * from users where id > 5;
+select * from users order by id;

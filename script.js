@@ -151,24 +151,26 @@ async function executeQuery() {
         // Mostrar datos
         const tbody = document.getElementById('resultsTable');
         
-        values.forEach(row => {
+        values.forEach((row, rowIndex) => {
             const tr = document.createElement('tr');
             
-            row.forEach(cell => {
+            row.forEach((cell, colIndex) => {
                 const td = document.createElement('td');
+                const columnName = columns[colIndex].toLowerCase();
                 
                 // Formatear fechas
-                if (cell && typeof cell === 'string' && cell.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                if (cell !== null && typeof cell === 'string' && cell.match(/^\d{4}-\d{2}-\d{2}$/)) {
                     const date = new Date(cell);
                     td.textContent = date.toLocaleDateString('es-ES');
-                } else {
-                    td.textContent = cell !== null ? cell : 'NULL';
-                }
-                
-                // Resaltar valores booleanos
-                if (cell === 1 || cell === 0) {
+                } 
+                // Solo convertir a Sí/No si es una columna de estado o booleana
+                else if ((columnName === 'status' || columnName.endsWith('_active') || columnName.endsWith('_status')) && (cell === 1 || cell === 0)) {
                     td.textContent = cell ? 'Sí' : 'No';
                     td.classList.add('text-center');
+                }
+                // Para cualquier otro valor, incluyendo IDs
+                else {
+                    td.textContent = cell !== null ? cell : 'NULL';
                 }
                 
                 tr.appendChild(td);
