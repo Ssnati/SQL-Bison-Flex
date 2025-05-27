@@ -13,24 +13,40 @@
     <div class="container-fluid mt-3">
         <h1 class="mb-4 text-center">Consultas SQL con analizador léxico y sintáctico</h1>
         
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            Las consultas se leen automáticamente desde <code>queries.sql</code>.
+            Solo se ejecutará la última línea no comentada del archivo.
+        </div>
+        
         <div class="row g-3">
             <!-- Panel de consulta SQL -->
             <div class="col-md-6">
                 <div class="card shadow h-100">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Editor SQL</h5>
+                        <div class="file-info text-light small">
+                            <i class="bi bi-file-earmark-text me-1"></i>
+                            <span id="fileName">queries.sql</span>
+                            <span id="fileStatus" class="badge bg-light text-dark ms-2">Listo</span>
+                        </div>
                     </div>
                     <div class="card-body d-flex flex-column h-100">
-                        <div class="mb-3">
-                            <textarea id="sqlQuery" class="form-control" rows="10" placeholder="Escribe tu consulta SQL aquí...">SELECT * FROM results</textarea>
+                        <div class="mb-3 flex-grow-1">
+                            <textarea id="sqlQuery" class="form-control h-100" placeholder="La consulta se cargará automáticamente desde queries.sql"></textarea>
                         </div>
-                        <div class="mt-auto">
-                            <button id="executeQuery" class="btn btn-primary">
-                                <i class="bi bi-play-fill"></i> Ejecutar Consulta
-                            </button>
-                            <button id="clearQuery" class="btn btn-outline-secondary ms-2">
-                                <i class="bi bi-x-circle"></i> Limpiar
-                            </button>
+                        <div class="mt-3 d-flex justify-content-between align-items-center">
+                            <div class="btn-group">
+                                <button id="executeQuery" class="btn btn-primary">
+                                    <i class="bi bi-play-fill me-1"></i> Ejecutar
+                                </button>
+                                <button id="openFile" class="btn btn-outline-secondary">
+                                    <i class="bi bi-folder2-open me-1"></i> Abrir archivo
+                                </button>
+                            </div>
+                            <div class="text-muted small">
+                                <span id="lastUpdated"></span>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -219,21 +219,208 @@ function clearEditor() {
     document.getElementById('queryTime').textContent = 'Tiempo de ejecución: 0ms';
 }
 
+// Variables para el seguimiento del archivo
+let lastFileContent = '';
+let lastModifiedTime = 0;
+let fileHandle = null;
+let fileChangeInterval = null;
+
+// Función para leer el archivo de consultas
+async function readQueryFile() {
+    try {
+        const response = await fetch('/api/queries');
+        if (!response.ok) throw new Error('No se pudo cargar el archivo de consultas');
+        
+        const data = await response.json();
+        return data.content;
+    } catch (error) {
+        console.error('Error al leer el archivo de consultas:', error);
+        showError('Error al leer el archivo de consultas: ' + error.message);
+        return null;
+    }
+}
+
+// Función para obtener la última consulta del archivo
+function getLastQuery(content) {
+    if (!content) return '';
+    
+    // Dividir por líneas y filtrar líneas vacías y comentarios
+    const lines = content
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line && !line.startsWith('--'));
+    
+    // Devolver la última línea no vacía
+    return lines[lines.length - 1] || '';
+}
+
+// Función para verificar cambios en el archivo
+async function checkForFileChanges() {
+    try {
+        const response = await fetch(`/api/queries/check?t=${new Date().getTime()}`);
+        if (!response.ok) return false;
+        
+        const data = await response.json();
+        
+        if (data.lastModified > lastModifiedTime) {
+            lastModifiedTime = data.lastModified;
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error al verificar cambios en el archivo:', error);
+        return false;
+    }
+}
+
+// Función para actualizar el editor con la última consulta
+async function updateEditorWithLatestQuery() {
+    try {
+        updateFileStatus('Leyendo archivo...', 'info');
+        const content = await readQueryFile();
+        
+        if (content === null) {
+            updateFileStatus('Error al leer', 'danger');
+            return;
+        }
+        
+        const lastQuery = getLastQuery(content);
+        if (lastQuery) {
+            editor.setValue(lastQuery);
+            // Actualizar la interfaz
+            updateLastUpdated();
+            updateFileStatus('Archivo cargado', 'success');
+            // Ejecutar la consulta automáticamente
+            executeQuery();
+        }
+    } catch (error) {
+        console.error('Error al actualizar el editor:', error);
+        updateFileStatus('Error al actualizar', 'danger');
+    }
+}
+
+// Función para actualizar el estado del archivo en la interfaz
+function updateFileStatus(message, type = 'info') {
+    const statusElement = document.getElementById('fileStatus');
+    if (!statusElement) return;
+    
+    statusElement.textContent = message;
+    statusElement.className = `badge bg-${type} text-${type === 'light' ? 'dark' : 'white'} ms-2`;
+    
+    // Restaurar el estado después de 3 segundos
+    if (type !== 'info') {
+        setTimeout(() => {
+            if (statusElement.textContent === message) {
+                statusElement.textContent = 'Listo';
+                statusElement.className = 'badge bg-light text-dark ms-2';
+            }
+        }, 3000);
+    }
+}
+
+// Función para actualizar la marca de tiempo de la última actualización
+function updateLastUpdated() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    
+    const dateElement = document.getElementById('lastUpdated');
+    if (dateElement) {
+        dateElement.textContent = `Última actualización: ${timeString}`;
+    }
+}
+
+// Función para abrir el archivo en el editor predeterminado
+async function openFileInEditor() {
+    try {
+        if (!window.showOpenFilePicker) {
+            // Si la API de File System Access no está disponible
+            window.open('queries.sql', '_blank');
+            return;
+        }
+        
+        fileHandle = await window.showOpenFilePicker({
+            types: [{
+                description: 'Archivos SQL',
+                accept: {'text/plain': ['.sql']}
+            }],
+            multiple: false
+        });
+        
+        const file = await fileHandle[0].getFile();
+        const content = await file.text();
+        
+        // Actualizar el contenido del archivo local
+        await saveToFile('queries.sql', content);
+        
+        // Actualizar la interfaz
+        document.getElementById('fileName').textContent = file.name;
+        await updateEditorWithLatestQuery();
+        
+    } catch (error) {
+        console.error('Error al abrir el archivo:', error);
+        updateFileStatus('Error al abrir', 'danger');
+    }
+}
+
+// Función para guardar contenido en un archivo
+async function saveToFile(filename, content) {
+    try {
+        const response = await fetch('/api/queries', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ content })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar el archivo');
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error al guardar el archivo:', error);
+        updateFileStatus('Error al guardar', 'danger');
+        return false;
+    }
+}
+
 // Inicializar la aplicación
 async function initApp() {
-    // Inicializar el editor de código
-    initCodeEditor();
-    
-    // Inicializar la base de datos
-    const dbInitialized = await initDatabase();
-    
-    if (dbInitialized) {
-        // Ejecutar consulta por defecto
-        executeQuery();
+    try {
+        // Inicializar el editor de código
+        initCodeEditor();
         
         // Configurar eventos
-        document.getElementById('executeQuery').addEventListener('click', executeQuery);
-        document.getElementById('clearQuery').addEventListener('click', clearEditor);
+        document.getElementById('executeQuery').addEventListener('click', updateEditorWithLatestQuery);
+        document.getElementById('openFile').addEventListener('click', openFileInEditor);
+        
+        // Inicializar la base de datos
+        const dbInitialized = await initDatabase();
+        
+        if (dbInitialized) {
+            // Cargar y ejecutar la última consulta
+            await updateEditorWithLatestQuery();
+            
+            // Verificar cambios en el archivo cada 2 segundos
+            fileChangeInterval = setInterval(async () => {
+                try {
+                    const hasChanges = await checkForFileChanges();
+                    if (hasChanges) {
+                        console.log('Archivo modificado, actualizando...');
+                        await updateEditorWithLatestQuery();
+                    }
+                } catch (error) {
+                    console.error('Error al verificar cambios:', error);
+                }
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('Error al inicializar la aplicación:', error);
+        showError('Error al inicializar la aplicación: ' + error.message);
     }
 }
 
