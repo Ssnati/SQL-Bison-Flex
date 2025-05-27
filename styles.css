@@ -2,6 +2,21 @@ body {
     background-color: #f5f7fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
+    padding: 1rem 0;
+}
+
+/* Contenedor principal más estrecho */
+.container-fluid {
+    max-width: 98%;
+    padding: 0 1rem;
+    margin: 0 auto;
+}
+
+/* Ajustes para pantallas grandes */
+@media (min-width: 1400px) {
+    .container-fluid {
+        max-width: 1600px;
+    }
 }
 
 .card {
@@ -11,6 +26,8 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
+    margin-bottom: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 .card-header {
@@ -22,21 +39,40 @@ body {
 .card-body {
     flex: 1;
     overflow: auto;
+    padding: 1rem;
 }
 
 /* Estilos para el editor SQL */
 #sqlQuery {
     font-family: 'Fira Code', 'Courier New', monospace;
     resize: none;
-    min-height: 300px;
+    min-height: 200px;
+    max-height: 40vh;
     border: 1px solid #dee2e6;
     border-radius: 4px;
     padding: 10px;
 }
 
+/* Contenedor del editor SQL */
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
 /* Estilos para la tabla de resultados */
 .table {
     margin-bottom: 0;
+    width: 100%;
+    table-layout: auto; /* Cambiado a auto para mejor ajuste del contenido */
+}
+
+/* Asegurar que las celdas no hagan wrap innecesariamente */
+.table td, .table th {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px; /* Ancho máximo para celdas */
 }
 
 .table thead th {
@@ -46,8 +82,17 @@ body {
     white-space: nowrap;
     position: sticky;
     top: 0;
-    background-color: #f8f9fa;
     z-index: 10;
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.table tbody td {
+    padding: 0.5rem 0.75rem;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .table tbody tr:hover {
@@ -55,11 +100,31 @@ body {
 }
 
 /* Estilos para el contenedor de resultados */
-#resultsContainer {
+.card-body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.table-responsive {
+    flex: 1;
+    overflow: auto;
     max-height: 60vh;
-    overflow-y: auto;
-    border: 1px solid #dee2e6;
+    min-height: 200px;
+}
+
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background-color: #adb5bd;
     border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
 }
 
 /* Estilos para los mensajes de estado */
@@ -67,6 +132,15 @@ body {
     font-family: monospace;
     white-space: pre-wrap;
     margin-bottom: 0;
+    padding: 0.75rem 1.25rem;
+}
+
+/* Ajustes para el contenedor de la tabla */
+.table-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* Estilos para el pie de página */
@@ -78,13 +152,21 @@ body {
 
 /* Estilos para el editor de código */
 .CodeMirror {
-    height: 100%;
-    min-height: 300px;
+    height: 200px;
+    min-height: 200px;
+    max-height: 40vh;
     font-family: 'Fira Code', 'Courier New', monospace;
     font-size: 14px;
     line-height: 1.5;
     border-radius: 4px;
     border: 1px solid #dee2e6;
+    background-color: #fff;
+    transition: height 0.3s ease;
+}
+
+/* Cuando el editor está enfocado, puede expandirse un poco más */
+.CodeMirror-focused {
+    height: 300px;
 }
 
 /* Estilos para los botones */
