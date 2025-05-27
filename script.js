@@ -369,51 +369,65 @@ function updateQueriesHistory() {
     // Actualizar el contador de consultas
     queryCountElement.textContent = queriesHistory.length;
     
-    // Si no hay consultas, mostrar mensaje
+    // Limpiar la lista
+    historyList.innerHTML = '';
+    
+    // Mostrar mensaje si no hay consultas
     if (queriesHistory.length === 0) {
         historyList.innerHTML = `
-            <li class="list-group-item text-muted text-center py-4">
+            <li class="text-muted text-center py-4">
                 <i class="bi bi-clock-history d-block mb-2" style="font-size: 2rem;"></i>
                 No hay consultas en el historial
             </li>`;
         return;
     }
     
-    // Limitar el historial a 7 elementos
-    const limitedHistory = queriesHistory.slice(-7);
-    
-    // Limpiar la lista
-    historyList.innerHTML = '';
-    
-    // Agregar cada consulta al historial (las más recientes primero)
-    [...limitedHistory].reverse().forEach((query, index) => {
+    // Mostrar consultas en orden inverso (la más reciente primero)
+    queriesHistory.slice().reverse().forEach((query, index) => {
         const li = document.createElement('li');
-        li.className = 'query-item' + (query === currentQuery ? ' active' : '');
+        li.className = 'query-item';
+        li.title = query;
         
-        // Crear un elemento de texto con la consulta
-        const queryText = document.createElement('div');
-        queryText.className = 'query-text';
-        queryText.textContent = query;
+        // Crear contenedor para el contenido
+        const content = document.createElement('div');
+        content.style.display = 'flex';
+        content.style.alignItems = 'center';
+        content.style.width = '100%';
         
-        // Agregar ícono de consulta
-        const icon = document.createElement('i');
-        icon.className = 'bi bi-arrow-return-right me-2 text-muted';
+        // Crear texto de la consulta
+        const text = document.createElement('span');
+        text.className = 'query-text';
+        text.textContent = query;
+        text.style.flex = '1';
+        text.style.overflow = 'hidden';
+        text.style.textOverflow = 'ellipsis';
+        text.style.whiteSpace = 'nowrap';
         
-        // Agregar elementos al elemento de la lista
-        li.appendChild(icon);
-        li.appendChild(queryText);
+        // Añadir elementos al LI
+        content.appendChild(text);
+        li.appendChild(content);
         
-        // Al hacer clic en una consulta anterior, cargarla en el editor
+        // Resaltar la consulta actual
+        if (query === editor.getValue().trim()) {
+            li.style.backgroundColor = '#f8f9fa';
+            li.style.fontWeight = '600';
+        }
+        
+        // Al hacer clic en una consulta del historial
         li.addEventListener('click', () => {
-            // Actualizar la consulta actual
-            currentQuery = query;
+            // Establecer la consulta en el editor
             editor.setValue(query);
             
-            // Actualizar las clases activas
-            document.querySelectorAll('.query-item').forEach(item => {
-                item.classList.remove('active');
+            // Resaltar la consulta seleccionada
+            document.querySelectorAll('#queriesHistory li').forEach(item => {
+                item.style.backgroundColor = '';
+                item.style.fontWeight = '';
             });
-            li.classList.add('active');
+            li.style.backgroundColor = '#f8f9fa';
+            li.style.fontWeight = '600';
+            
+            // Desplazar la vista a la consulta seleccionada
+            li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
             // Ejecutar la consulta automáticamente
             executeQuery();
@@ -421,15 +435,6 @@ function updateQueriesHistory() {
         
         historyList.appendChild(li);
     });
-    
-    // Mostrar mensaje si no hay consultas
-    if (queriesHistory.length === 0) {
-        historyList.innerHTML = `
-            <li class="list-group-item text-muted text-center py-4">
-                <i class="bi bi-clock-history d-block mb-2" style="font-size: 2rem;"></i>
-                No hay consultas en el historial
-            </li>`;
-    }
 }
 
 // Función para alternar la visibilidad del historial

@@ -6,3 +6,5 @@ select * from users order by email;
 select * from users order by name;
 select * from users where id > 5 and age > 20;
 select * from users where id > 5 and id < 10;
+select * from users where id > 5 and id < 10 and age > 20;
+select * from users where id > 5 and id < 10 and age > 20 and name like '%J%';
