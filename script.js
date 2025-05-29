@@ -437,6 +437,64 @@ function updateQueriesHistory() {
     });
 }
 
+// Función para limpiar el historial
+async function clearHistory() {
+    // Mostrar el modal de confirmación
+    const modal = new bootstrap.Modal(document.getElementById('confirmClearModal'));
+    modal.show();
+}
+
+// Función que realiza la limpieza del historial
+async function performHistoryClear() {
+    try {
+        // Limpiar el array en memoria
+        queriesHistory = [];
+        
+        // Limpiar la interfaz
+        const historyList = document.getElementById('queriesList');
+        if (historyList) {
+            historyList.innerHTML = '';
+        }
+        
+        // Limpiar el archivo de historial en el servidor
+        const response = await fetch('/api/queries', {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al limpiar el historial en el servidor');
+        }
+        
+        // Limpiar el localStorage del navegador
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('sqlQueryHistory');
+        }
+        
+        // Actualizar la interfaz
+        updateQueriesHistory();
+        updateFileStatus('Historial eliminado correctamente', 'success');
+        
+        // Actualizar el estado de última modificación
+        lastModifiedTime = 0;
+        
+        // Cerrar el modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmClearModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+    } catch (error) {
+        console.error('Error al limpiar el historial:', error);
+        updateFileStatus('Error al limpiar el historial: ' + error.message, 'danger');
+        
+        // Cerrar el modal en caso de error
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmClearModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
+}
+
 // Función para alternar la visibilidad del historial
 function toggleHistory() {
     const historyContainer = document.querySelector('.history-container');
@@ -459,6 +517,17 @@ function toggleHistory() {
 
 // Inicializar la aplicación
 async function initApp() {
+    // Configurar el botón de limpiar historial
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', clearHistory);
+    }
+    
+    // Configurar el botón de confirmación del modal
+    const confirmClearBtn = document.getElementById('confirmClearBtn');
+    if (confirmClearBtn) {
+        confirmClearBtn.addEventListener('click', performHistoryClear);
+    }
     try {
         // Inicializar el editor de código
         initCodeEditor();

@@ -2,9 +2,11 @@ const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
 const cors = require('cors');
+const { spawn } = require('child_process');
 
 const app = express();
 const PORT = 3000;
+const HOST = '0.0.0.0';
 const QUERIES_FILE = 'queries.txt';
 
 // Middleware
@@ -40,7 +42,7 @@ app.post('/api/queries', async (req, res) => {
         if (!query || typeof query !== 'string') {
             return res.status(400).json({ error: 'La consulta es requerida' });
         }
-        
+
         // Agregar la nueva consulta al final del archivo
         await fs.appendFile(QUERIES_FILE, query + '\n', 'utf-8');
         
@@ -56,6 +58,18 @@ app.post('/api/queries', async (req, res) => {
     } catch (error) {
         console.error('Error al guardar la consulta:', error);
         res.status(500).json({ error: 'Error al guardar la consulta' });
+    }
+});
+
+// Limpiar todas las consultas
+app.delete('/api/queries', async (req, res) => {
+    try {
+        // Escribir un archivo vacío
+        await fs.writeFile(QUERIES_FILE, '', 'utf-8');
+        res.json({ success: true, message: 'Historial de consultas eliminado' });
+    } catch (error) {
+        console.error('Error al limpiar consultas:', error);
+        res.status(500).json({ error: 'Error al limpiar el historial de consultas' });
     }
 });
 
@@ -83,7 +97,7 @@ app.get('/api/queries/check', async (req, res) => {
 async function startServer() {
     await ensureQueriesFile();
     app.listen(PORT, () => {
-        console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+        console.log(`Servidor ejecutándose en http://${HOST}:${PORT}`);
     });
 }
 

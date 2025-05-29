@@ -46,6 +46,9 @@
                                         <button id="toggleHistory" class="btn btn-outline-secondary">
                                             <i class="bi bi-clock-history me-1"></i> Mostrar historial
                                         </button>
+                                        <button id="clearHistory" class="btn btn-outline-danger">
+                                            <i class="bi bi-trash-fill me-1"></i> Limpiar historial
+                                        </button>
                                     </div>
                                     <div class="text-muted small">
                                         <span id="lastUpdated"></span>
@@ -110,6 +113,27 @@
             </div>
 
 
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmClearModal" tabindex="-1" aria-labelledby="confirmClearModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="confirmClearModalLabel">Confirmar eliminación</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar todo el historial de consultas? Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmClearBtn">
+                        <i class="bi bi-trash-fill me-1"></i> Eliminar todo
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
