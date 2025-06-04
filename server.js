@@ -80,14 +80,30 @@ async function ensureQueriesFile() {
 
 async function translateSQL(query) {
     try {
-        // Verificar si el ejecutable existe y es ejecutable
+        // Verificar si el archivo existe
         const stats = await fs.stat(SQL_EXECUTABLE);
         if (!stats.isFile()) {
             throw new Error('El archivo ejecutable no es un archivo válido');
         }
+        
+        // Establecer permisos de ejecución (solo en sistemas Unix/Linux)
+        if (process.platform !== 'win32') {
+            try {
+                const { execSync } = require('child_process');
+                execSync(`chmod +x ${SQL_EXECUTABLE}`);
+                console.log('Permisos de ejecución establecidos correctamente');
+            } catch (chmodError) {
+                console.warn('No se pudieron establecer los permisos de ejecución:', chmodError.message);
+                // Continuar de todos modos, ya que el archivo podría ya tener los permisos
+            }
+        }
 
         return new Promise((resolve, reject) => {
-            const sqlProcess = spawn(SQL_EXECUTABLE, [], { stdio: ['pipe', 'pipe', 'pipe'] });
+            const sqlProcess = spawn(SQL_EXECUTABLE, [], { 
+                stdio: ['pipe', 'pipe', 'pipe'],
+                shell: process.platform === 'win32' // Usar shell en Windows para manejar mejor los ejecutables
+            });
+            
             sqlProcess.stdin.write(query + '\n');
             sqlProcess.stdin.end();
 
