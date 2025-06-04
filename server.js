@@ -8,6 +8,8 @@ const app = express();
 const PORT = 3000;
 const HOST = '0.0.0.0';
 const QUERIES_FILE = 'queries.txt';
+const RESULT_FILE = 'queries-result.txt';
+const SQL_EXECUTABLE = './sql'; // Ajusta la ruta según donde esté tu ejecutable
 
 // Middleware
 app.use(cors());
@@ -23,15 +25,59 @@ async function ensureQueriesFile() {
     }
 }
 
+async function translateSQL(query) {
+    return new Promise((resolve, reject) => {
+        const sqlProcess = spawn(SQL_EXECUTABLE, [], { stdio: ['pipe', 'pipe', 'pipe'] });
+        sqlProcess.stdin.write(query + '\n');
+        sqlProcess.stdin.end();
+
+        let result = '';
+        sqlProcess.stdout.on('data', (data) => result += data.toString());
+
+        sqlProcess.on('close', (code) => {
+            if (code !== 0) {
+                reject(new Error(`Error en el proceso SQL (código: ${code})`));
+                return;
+            }
+
+            try {
+                const lines = result.split('\n').filter(line => line.trim() !== '');
+                const lastLine = lines[lines.length - 1];
+                resolve(lastLine);
+            } catch (error) {
+                reject(new Error('Error procesando el resultado SQL'));
+            }
+        });
+
+        sqlProcess.stderr.on('data', (data) => {
+            reject(new Error(`Error en el proceso SQL: ${data.toString()}`));
+        });
+    });
+}
+
 // Obtener todas las consultas
-app.get('/api/queries', async (req, res) => {
+app.get('/api/queries/check', async (req, res) => {
     try {
+        const stats = await fs.stat(QUERIES_FILE);
         const content = await fs.readFile(QUERIES_FILE, 'utf-8');
         const queries = content.split('\n').filter(q => q.trim() !== '');
-        res.json({ queries });
+        const lastQuery = queries[queries.length - 1] || '';
+        
+        // Traducir la última consulta
+        const translatedQuery = lastQuery ? await translateSQL(lastQuery) : '';
+        
+        res.json({ 
+            lastModified: stats.mtime.getTime(),
+            size: stats.size,
+            totalQueries: queries.length,
+            lastQuery: {
+                original: lastQuery,
+                translated: translatedQuery
+            }
+        });
     } catch (error) {
-        console.error('Error al leer las consultas:', error);
-        res.status(500).json({ error: 'Error al leer las consultas' });
+        console.error('Error al verificar consultas:', error);
+        res.status(500).json({ error: 'Error al verificar consultas' });
     }
 });
 
@@ -43,8 +89,11 @@ app.post('/api/queries', async (req, res) => {
             return res.status(400).json({ error: 'La consulta es requerida' });
         }
 
-        // Agregar la nueva consulta al final del archivo
+        // Guardar la consulta original
         await fs.appendFile(QUERIES_FILE, query + '\n', 'utf-8');
+        
+        // Traducir la consulta usando el ejecutable SQL
+        const sqlQuery = await translateSQL(query);
         
         // Obtener todas las consultas para devolverlas
         const content = await fs.readFile(QUERIES_FILE, 'utf-8');
@@ -53,11 +102,14 @@ app.post('/api/queries', async (req, res) => {
         res.json({ 
             success: true, 
             queries,
-            lastQuery: query
+            lastQuery: query,
+            translatedQuery: sqlQuery
         });
     } catch (error) {
-        console.error('Error al guardar la consulta:', error);
-        res.status(500).json({ error: 'Error al guardar la consulta' });
+        console.error('Error al procesar la consulta:', error);
+        res.status(500).json({ 
+            error: error.message || 'Error al procesar la consulta' 
+        });
     }
 });
 
