@@ -1,0 +1,3 @@
+seleccionar todos de usuarios;
+mostrar todos de productos;
+ver todos de pedidos;

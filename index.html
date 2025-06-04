@@ -15,8 +15,55 @@
         
         <div class="alert alert-info">
             <i class="bi bi-info-circle-fill me-2"></i>
-            Escribe tus consultas SQL en el editor y haz clic en "Ejecutar" para guardarlas y ejecutarlas.
-            El historial de consultas se guarda automáticamente.
+            Escribe tus consultas en lenguaje natural y haz clic en "Ejecutar" para convertirlas en SQL. Ejemplos:
+            <ul>
+                <li><strong>Estructura de Consultas:</strong> 
+                    <ul>
+                        <li>"seleccionar &lt;lista_de_atributos&gt; de &lt;nombre_tabla&gt; donde &lt;condicion&gt;"</li>
+                        <li>"insertar en &lt;nombre_tabla&gt; valores (&lt;valores&gt;)"</li>
+                        <li>"actualizar &lt;nombre_tabla&gt; establecer &lt;campo&gt; a &lt;valor&gt; donde &lt;condicion&gt;"</li>
+                        <li>"eliminar de &lt;nombre_tabla&gt; donde &lt;condicion&gt;"</li>
+                    </ul>
+                </li>
+                <li><strong>Estructura de Condiciones:</strong>
+                    <ul>
+                        <li>"&lt;campo&gt; igual &lt;valor&gt;"</li>
+                        <li>"&lt;campo&gt; mayor &lt;valor&gt;"</li>
+                        <li>"&lt;campo&gt; menor &lt;valor&gt;"</li>
+                        <li>"&lt;campo&gt; mayor igual &lt;valor&gt;"</li>
+                        <li>"&lt;campo&gt; menor igual &lt;valor&gt;"</li>
+                        <li>"&lt;campo&gt; distinto &lt;valor&gt;"</li>
+                        <li>"&lt;campo&gt; no igual &lt;valor&gt;"</li>
+                    </ul>
+                </li>
+                <li><strong>Condiciones Combinadas:</strong>
+                    <ul>
+                        <li>"&lt;condicion&gt; y &lt;condicion&gt;"</li>
+                        <li>"&lt;condicion&gt; o &lt;condicion&gt;"</li>
+                    </ul>
+                </li>
+                <li><strong>Consultas de selección:</strong> 
+                    <ul>
+                        <li>"seleccionar nombre_usuario de usuarios donde nombre igual 'juan'"</li>
+                    </ul>
+                </li>
+                <li><strong>Inserción de datos:</strong>
+                    <ul>
+                        <li>"insertar en productos valores (10, 'teclado', 'perifericos', 20)"</li>
+                    </ul>
+                </li>
+                <li><strong>Actualización de datos:</strong>
+                    <ul>
+                        <li>"actualizar productos establecer stock a 25 donde id_producto igual 1"</li>
+                    </ul>
+                </li>
+                <li><strong>Eliminación de datos:</strong>
+                    <ul>
+                        <li>"eliminar de productos donde stock igual 0"</li>
+                    </ul>
+                </li>
+            </ul>
+            <p class="mt-3">Nota: Los valores de texto deben usar solo caracteres alfanuméricos y guion bajo ([a-zA-Z_][a-zA-Z0-9_]*)</p>
         </div>
         
         <div class="row g-3">
