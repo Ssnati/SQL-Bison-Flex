@@ -34,22 +34,33 @@ async function initEditor() {
             }
         });
 
-        document.getElementById('toggleHistory').addEventListener('click', () => {
+        document.getElementById('toggleHistory').addEventListener('click', async () => {
             try {
+                console.log('Botón de historial clickeado. Estado actual:', isHistoryVisible ? 'visible' : 'oculto');
                 const historyContainer = document.querySelector('.history-container');
-                if (!historyContainer) throw new Error('No se encontró el contenedor del historial');
+                if (!historyContainer) {
+                    console.error('No se encontró el contenedor del historial');
+                    throw new Error('No se encontró el contenedor del historial');
+                }
                 
                 if (isHistoryVisible) {
-                    historyContainer.style.display = 'none';
-                    document.getElementById('toggleHistory').textContent = 'Mostrar historial';
+                    console.log('Ocultando historial');
+                    historyContainer.classList.remove('visible');
+                    document.getElementById('toggleHistory').innerHTML = '<i class="bi bi-clock-history me-1"></i> Mostrar historial';
                 } else {
-                    historyContainer.style.display = 'block';
-                    document.getElementById('toggleHistory').textContent = 'Ocultar historial';
+                    console.log('Mostrando historial');
+                    // Cargar el historial antes de mostrarlo
+                    await loadQueriesHistory();
+                    console.log('Historial cargado, actualizando vista');
+                    updateQueriesHistory();
+                    historyContainer.classList.add('visible');
+                    document.getElementById('toggleHistory').innerHTML = '<i class="bi bi-clock-history me-1"></i> Ocultar historial';
                 }
                 isHistoryVisible = !isHistoryVisible;
+                console.log('Nuevo estado del historial:', isHistoryVisible ? 'visible' : 'oculto');
             } catch (error) {
                 console.error('Error al alternar el historial:', error);
-                showError('Error al alternar el historial');
+                showError('Error al cargar el historial');
             }
         });
 
@@ -235,36 +246,148 @@ let fileChangeInterval = null;
 let queriesHistory = [];
 let currentQuery = '';
 
+// Función para actualizar la visualización del historial de consultas
+function updateQueriesHistory() {
+    console.log('Actualizando vista del historial. Número de consultas:', queriesHistory.length);
+    const historyList = document.getElementById('queriesHistory');
+    if (!historyList) {
+        console.error('No se encontró el elemento con ID queriesHistory');
+        return;
+    }
+
+    if (queriesHistory.length === 0) {
+        console.log('No hay consultas en el historial, mostrando mensaje');
+        historyList.innerHTML = `
+            <li class="list-group-item text-muted text-center py-4">
+                <i class="bi bi-clock-history d-block mb-2" style="font-size: 2rem;"></i>
+                No hay consultas en el historial
+            </li>`;
+        return;
+    }
+
+    try {
+        // Ordenar de más reciente a más antiguo
+        const sortedQueries = [...queriesHistory].reverse();
+        
+        console.log('Generando HTML para las consultas...');
+        historyList.innerHTML = sortedQueries.map((query, index) => {
+            const safeQuery = query ? query.replace(/"/g, '&quot;')
+                                   .replace(/</g, '&lt;')
+                                   .replace(/>/g, '&gt;') : '';
+            const displayText = query || 'Consulta vacía';
+            const timestamp = new Date().toLocaleTimeString();
+            
+            return `
+            <li class="list-group-item query-item" data-query="${safeQuery}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="query-text">${displayText}</div>
+                    <div class="d-flex flex-column align-items-end">
+                        <small class="text-muted mb-1">${timestamp}</small>
+                        <button class="btn btn-sm btn-outline-primary use-query" title="Usar esta consulta">
+                            <i class="bi bi-arrow-return-left"></i>
+                        </button>
+                    </div>
+                </div>
+            </li>`;
+        }).join('');
+
+        console.log('HTML generado, agregando manejadores de eventos...');
+        // Agregar manejadores de eventos a los botones de usar consulta
+        document.querySelectorAll('.use-query').forEach((button, index) => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const queryItem = e.target.closest('.query-item');
+                if (!queryItem) {
+                    console.error('No se pudo encontrar el elemento padre query-item');
+                    return;
+                }
+                const query = queryItem.getAttribute('data-query');
+                console.log('Cargando consulta en el editor:', query);
+                editor.setValue(query);
+                // Desplazar el editor a la vista
+                const codeMirror = document.querySelector('.CodeMirror');
+                if (codeMirror) {
+                    codeMirror.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+        console.log('Vista del historial actualizada correctamente');
+    } catch (error) {
+        console.error('Error al actualizar la vista del historial:', error);
+        historyList.innerHTML = `
+            <li class="list-group-item text-danger text-center py-4">
+                <i class="bi bi-exclamation-triangle d-block mb-2" style="font-size: 2rem;"></i>
+                Error al cargar el historial
+            </li>`;
+    }
+}
+
 // Función para cargar el historial de consultas
 async function loadQueriesHistory() {
     try {
+        console.log('Iniciando carga del historial de consultas...');
         updateFileStatus('Cargando historial...', 'info');
+        
+        console.log('Realizando petición a /api/queries...');
         const response = await fetch('/api/queries');
+        console.log('Respuesta recibida. Estado:', response.status, response.statusText);
+        
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al cargar el historial');
+            let errorMessage = 'Error al cargar el historial';
+            try {
+                const errorData = await response.json();
+                console.error('Error del servidor:', errorData);
+                errorMessage = errorData.error || errorData.message || errorMessage;
+            } catch (e) {
+                console.error('No se pudo procesar la respuesta de error:', e);
+            }
+            throw new Error(errorMessage);
         }
         
+        console.log('Procesando datos de la respuesta...');
         const data = await response.json();
-        queriesHistory = data.queries || [];
+        console.log('Datos recibidos:', data);
+        
+        // Asegurarse de que data.queries es un array
+        // El servidor devuelve { queries: [...] } pero también manejamos el caso directo
+        const queriesArray = Array.isArray(data.queries) ? data.queries : 
+                           (Array.isArray(data) ? data : []);
+        queriesHistory = queriesArray;
+        console.log(`Se cargaron ${queriesHistory.length} consultas en el historial`);
+        
+        // Actualizar el contador en la interfaz
+        const queryCountElement = document.getElementById('queryCount');
+        if (queryCountElement) {
+            queryCountElement.textContent = queriesHistory.length;
+        } else {
+            console.warn('No se encontró el elemento queryCount');
+        }
         
         if (queriesHistory.length > 0) {
             currentQuery = queriesHistory[queriesHistory.length - 1];
-            editor.setValue(currentQuery);
+            console.log('Consulta actual establecida:', currentQuery);
+            if (editor) {
+                editor.setValue(currentQuery);
+            } else {
+                console.warn('El editor no está inicializado');
+            }
             updateFileStatus('Historial cargado', 'success');
-            return currentQuery;
+        } else {
+            console.log('No hay consultas en el historial');
+            updateFileStatus('No hay consultas en el historial', 'info');
         }
-        return '';
+        
+        return queriesHistory;
     } catch (error) {
-        console.error('Error al cargar el historial:', error);
-        updateFileStatus('Error al cargar historial', 'danger');
-        return '';
+        console.error('Error en loadQueriesHistory:', error);
+        updateFileStatus('Error al cargar el historial: ' + error.message, 'danger');
+        throw error; // Relanzar el error para que lo maneje el llamador
     }
 }
 
 // Función para obtener la última consulta del archivo
 function getLastQuery(content) {
-if (!content) return '';
+    if (!content) return '';
 
 // Dividir por líneas y filtrar líneas vacías y comentarios
 const lines = content
