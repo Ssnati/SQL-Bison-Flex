@@ -53,22 +53,37 @@ async function initEditor() {
             }
         });
 
-        document.getElementById('clearHistory').addEventListener('click', async () => {
+        // Configurar el modal de confirmación para limpiar el historial
+        const clearHistoryBtn = document.getElementById('clearHistory');
+        const confirmClearBtn = document.getElementById('confirmClearBtn');
+        const clearModal = new bootstrap.Modal(document.getElementById('confirmClearModal'));
+        
+        clearHistoryBtn.addEventListener('click', () => {
+            clearModal.show();
+        });
+
+        confirmClearBtn.addEventListener('click', async () => {
             try {
-                if (!confirm('¿Estás seguro de que deseas limpiar el historial?')) return;
+                clearModal.hide();
+                updateFileStatus('Limpiando historial...', 'info');
                 
                 const response = await fetch('/api/queries', {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Error al limpiar el historial');
+                const result = await response.json();
+                
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Error al limpiar el historial');
                 }
                 
+                // Limpiar el historial local
                 queriesHistory = [];
-                updateQueriesHistory();
-                updateFileStatus('Historial limpiado', 'success');
+                updateFileStatus(result.message || 'Historial limpiado', 'success');
             } catch (error) {
                 console.error('Error al limpiar el historial:', error);
                 updateFileStatus('Error al limpiar el historial', 'danger');
@@ -232,7 +247,6 @@ async function loadQueriesHistory() {
         
         const data = await response.json();
         queriesHistory = data.queries || [];
-        updateQueriesHistory();
         
         if (queriesHistory.length > 0) {
             currentQuery = queriesHistory[queriesHistory.length - 1];

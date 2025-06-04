@@ -143,16 +143,6 @@ app.get('/api/queries', async (req, res) => {
     }
 });
 
-// Limpiar el historial de consultas
-app.delete('/api/queries', async (req, res) => {
-    try {
-        await fs.writeFile(QUERIES_FILE, '', 'utf-8');
-        res.status(200).json({ message: 'Historial limpiado correctamente' });
-    } catch (error) {
-        console.error('Error al limpiar el historial:', error);
-        res.status(500).json({ error: 'Error al limpiar el historial' });
-    }
-});
 
 // Agregar una nueva consulta
 app.post('/api/queries', async (req, res) => {
@@ -216,10 +206,32 @@ app.delete('/api/queries', async (req, res) => {
     try {
         // Escribir un archivo vacío
         await fs.writeFile(QUERIES_FILE, '', 'utf-8');
-        res.json({ success: true, message: 'Historial de consultas eliminado' });
+        
+        // Crear un objeto de respuesta consistente
+        const response = {
+            success: true,
+            message: 'Historial de consultas eliminado',
+            timestamp: new Date().toISOString()
+        };
+        
+        // Establecer el encabezado Content-Type
+        res.setHeader('Content-Type', 'application/json');
+        // Enviar la respuesta como JSON
+        res.json(response);
     } catch (error) {
         console.error('Error al limpiar consultas:', error);
-        res.status(500).json({ error: 'Error al limpiar el historial de consultas' });
+        
+        // Crear un objeto de error consistente
+        const errorResponse = {
+            success: false,
+            error: 'Error al limpiar el historial de consultas',
+            details: error.message,
+            timestamp: new Date().toISOString()
+        };
+        
+        // Establecer el encabezado Content-Type y el código de estado
+        res.status(500).setHeader('Content-Type', 'application/json');
+        res.json(errorResponse);
     }
 });
 
