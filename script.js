@@ -1,192 +1,185 @@
 // Variables globales
-let db;
 let editor;
+let isHistoryVisible = false;
+let lastQueryTime = 0;
 
-// Datos de ejemplo para poblar la base de datos
-const sampleData = [
-    { id: 1, name: 'Juan Pérez', email: 'juan@example.com', age: 32, status: 'active', created_at: '2023-05-26' },
-    { id: 2, name: 'María García', email: 'maria@example.com', age: 28, status: 'inactive', created_at: '2023-05-25' },
-    { id: 3, name: 'Carlos López', email: 'carlos@example.com', age: 45, status: 'active', created_at: '2023-05-24' },
-    { id: 4, name: 'Ana Martínez', email: 'ana@example.com', age: 35, status: 'pending', created_at: '2023-05-23' },
-    { id: 5, name: 'Pedro Sánchez', email: 'pedro@example.com', age: 29, status: 'active', created_at: '2023-05-22' },
-    { id: 6, name: 'Laura Ruiz', email: 'laura@example.com', age: 41, status: 'inactive', created_at: '2023-05-21' },
-    { id: 7, name: 'David Torres', email: 'david@example.com', age: 37, status: 'active', created_at: '2023-05-20' },
-    { id: 8, name: 'Elena Castro', email: 'elena@example.com', age: 31, status: 'pending', created_at: '2023-05-19' },
-    { id: 9, name: 'Javier Díaz', email: 'javier@example.com', age: 26, status: 'active', created_at: '2023-05-18' },
-    { id: 10, name: 'Sofía Méndez', email: 'sofia@example.com', age: 33, status: 'inactive', created_at: '2023-05-17' },
-    { id: 11, name: 'Juan Pérez', email: 'juan4@example.com', age: 32, status: 'active', created_at: '2023-05-26' },
-    { id: 12, name: 'María García', email: 'maria4@example.com', age: 28, status: 'inactive', created_at: '2023-05-25' },
-    { id: 13, name: 'Carlos López', email: 'carlos4@example.com', age: 45, status: 'active', created_at: '2023-05-24' },
-    { id: 14, name: 'Ana Martínez', email: 'ana4@example.com', age: 35, status: 'pending', created_at: '2023-05-23' },
-    { id: 15, name: 'Pedro Sánchez', email: 'pedroa@example.com', age: 29, status: 'active', created_at: '2023-05-22' },
-    { id: 16, name: 'Laura Ruiz', email: 'lauraa@example.com', age: 41, status: 'inactive', created_at: '2023-05-21' },
-    { id: 17, name: 'David Torres', email: 'davida@example.com', age: 37, status: 'active', created_at: '2023-05-20' },
-    { id: 18, name: 'Elena Castro', email: 'elenaa@example.com', age: 31, status: 'pending', created_at: '2023-05-19' },
-    { id: 19, name: 'Javier Díaz', email: 'javiera@example.com', age: 26, status: 'active', created_at: '2023-05-18' },
-    { id: 20, name: 'Sofía Méndez', email: 'sofiaa@example.com', age: 33, status: 'inactive', created_at: '2023-05-17' },
-    { id: 21, name: 'Juan Pérez', email: 'juana@example.com', age: 32, status: 'active', created_at: '2023-05-26' },
-    { id: 22, name: 'María García', email: 'mariaa@example.com', age: 28, status: 'inactive', created_at: '2023-05-25' },
-    { id: 23, name: 'Carlos López', email: 'carlosa@example.com', age: 45, status: 'active', created_at: '2023-05-24' },
-    { id: 24, name: 'Ana Martínez', email: 'anaaa@example.com', age: 35, status: 'pending', created_at: '2023-05-23' },
-    { id: 25, name: 'Pedro Sánchez', email: 'pedro1@example.com', age: 29, status: 'active', created_at: '2023-05-22' },
-    { id: 26, name: 'Laura Ruiz', email: 'laura1@example.com', age: 41, status: 'inactive', created_at: '2023-05-21' },
-    { id: 27, name: 'David Torres', email: 'david1@example.com', age: 37, status: 'active', created_at: '2023-05-20' },
-    { id: 28, name: 'Elena Castro', email: 'elena1@example.com', age: 31, status: 'pending', created_at: '2023-05-19' },
-    { id: 29, name: 'Javier Díaz', email: 'javier1@example.com', age: 26, status: 'active', created_at: '2023-05-18' },
-    { id: 30, name: 'Sofía Méndez', email: 'sofia1@example.com', age: 33, status: 'inactive', created_at: '2023-05-17' }
-];
+// Configuración del editor
+const editorOptions = {
+    mode: 'text/x-sql',
+    theme: 'dracula',
+    lineNumbers: true,
+    autofocus: true,
+    tabSize: 4,
+    indentUnit: 4,
+    extraKeys: { 'Ctrl-Space': 'autocomplete' }
+};
 
-// Inicializar la base de datos SQL.js
-async function initDatabase() {
+// URLs del backend
+const API_URL = '/api/queries';
+
+// Inicializar el editor SQL
+async function initEditor() {
     try {
-        // Cargar SQL.js
-        const SQL = await initSqlJs({
-            locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}`
-        });
-        
-        // Crear una nueva base de datos
-        db = new SQL.Database();
-        
-        // Crear tabla de ejemplo
-        db.run(`
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                age INTEGER,
-                status TEXT,
-                created_at DATE
-            );
-        `);
-        
-        // Insertar datos de ejemplo si la tabla está vacía
-        const result = db.exec("SELECT COUNT(*) as count FROM users");
-        if (result[0].values[0][0] === 0) {
-            const stmt = db.prepare("INSERT INTO users (id, name, email, age, status, created_at) VALUES (?, ?, ?, ?, ?, ?)");
-            sampleData.forEach(user => {
-                stmt.run([user.id, user.name, user.email, user.age, user.status, user.created_at]);
-            });
-            stmt.free();
-        }
-        
-        // Crear tabla de resultados
-        db.run('CREATE TABLE IF NOT EXISTS results (id INTEGER PRIMARY KEY, description TEXT, date TEXT, status TEXT)');
-        
-        console.log('Base de datos inicializada correctamente');
-        return true;
-    } catch (error) {
-        console.error('Error al inicializar la base de datos:', error);
-        showError('Error al inicializar la base de datos: ' + error.message);
-        return false;
-    }
-}
+        editor = CodeMirror.fromTextArea(document.getElementById('sqlQuery'), editorOptions);
+        await loadQueriesHistory();
+        updateFileStatus('Listo', 'success');
 
-// Inicializar el editor de código
-function initCodeEditor() {
-    editor = CodeMirror.fromTextArea(document.getElementById('sqlQuery'), {
-        mode: 'text/x-sql',
-        theme: 'dracula',
-        lineNumbers: true,
-        lineWrapping: true,
-        autoCloseBrackets: true,
-        matchBrackets: true,
-        indentWithTabs: false,
-        tabSize: 2,
-        extraKeys: {
-            'Ctrl-Enter': executeQuery,
-            'Cmd-Enter': executeQuery
-        }
-    });
-    
-    // Establecer consulta por defecto
-    editor.setValue('SELECT * FROM users;');
+        // Añadir event listeners para los botones
+        document.getElementById('executeQuery').addEventListener('click', async () => {
+            try {
+                await executeCurrentQuery();
+            } catch (error) {
+                console.error('Error al ejecutar consulta:', error);
+                showError('Error al ejecutar la consulta');
+            }
+        });
+
+        document.getElementById('toggleHistory').addEventListener('click', () => {
+            try {
+                const historyContainer = document.querySelector('.history-container');
+                if (!historyContainer) throw new Error('No se encontró el contenedor del historial');
+                
+                if (isHistoryVisible) {
+                    historyContainer.style.display = 'none';
+                    document.getElementById('toggleHistory').textContent = 'Mostrar historial';
+                } else {
+                    historyContainer.style.display = 'block';
+                    document.getElementById('toggleHistory').textContent = 'Ocultar historial';
+                }
+                isHistoryVisible = !isHistoryVisible;
+            } catch (error) {
+                console.error('Error al alternar el historial:', error);
+                showError('Error al alternar el historial');
+            }
+        });
+
+        document.getElementById('clearHistory').addEventListener('click', async () => {
+            try {
+                if (!confirm('¿Estás seguro de que deseas limpiar el historial?')) return;
+                
+                const response = await fetch('/api/queries', {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al limpiar el historial');
+                }
+                
+                queriesHistory = [];
+                updateQueriesHistory();
+                updateFileStatus('Historial limpiado', 'success');
+            } catch (error) {
+                console.error('Error al limpiar el historial:', error);
+                updateFileStatus('Error al limpiar el historial', 'danger');
+            }
+        });
+    } catch (error) {
+        console.error('Error al inicializar el editor:', error);
+        showError('Error al inicializar el editor');
+    }
 }
 
 // Ejecutar consulta SQL
 async function executeQuery() {
     const query = editor.getValue().trim();
-    if (!query) return;
-    
+    if (!query) {
+        showError('Por favor, ingrese una consulta SQL');
+        return;
+    }
+
     // Limpiar resultados anteriores
     document.getElementById('resultsTable').innerHTML = '';
     document.getElementById('resultsHeader').innerHTML = '';
     document.getElementById('noResults').classList.add('d-none');
     document.getElementById('errorMessage').classList.add('d-none');
     document.getElementById('queryInfo').classList.add('d-none');
-    
+
     try {
-        const startTime = performance.now();
-        const results = db.exec(query);
-        const endTime = performance.now();
-        const executionTime = (endTime - startTime).toFixed(2);
-        
-        // Mostrar tiempo de ejecución
-        document.getElementById('queryTime').textContent = `Tiempo de ejecución: ${executionTime}ms`;
-        
-        if (results.length === 0) {
+        // Ejecutar consulta en el backend
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al ejecutar la consulta');
+        }
+
+        const data = await response.json();
+        const results = data.results;
+
+        // Mostrar resultados
+        if (!results || results.length === 0) {
             showNoResults();
             return;
         }
-        
+
         // Procesar resultados
-        const result = results[0];
-        const columns = result.columns;
-        const values = result.values;
-        
+        const columns = Object.keys(results[0]);
+        const values = results;
+
         // Actualizar contador de filas
         document.getElementById('rowCount').textContent = `${values.length} fila${values.length !== 1 ? 's' : ''}`;
-        
+
         // Mostrar encabezados
         const thead = document.getElementById('resultsHeader');
         const headerRow = document.createElement('tr');
-        
+
         columns.forEach(column => {
             const th = document.createElement('th');
             th.textContent = column;
             headerRow.appendChild(th);
         });
-        
+
         thead.appendChild(headerRow);
-        
+
         // Mostrar datos
         const tbody = document.getElementById('resultsTable');
-        
+
         values.forEach((row, rowIndex) => {
             const tr = document.createElement('tr');
-            
-            row.forEach((cell, colIndex) => {
+
+            columns.forEach(column => {
                 const td = document.createElement('td');
-                const columnName = columns[colIndex].toLowerCase();
-                
+                const value = row[column];
+
                 // Formatear fechas
-                if (cell !== null && typeof cell === 'string' && cell.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    const date = new Date(cell);
+                if (value !== null && typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    const date = new Date(value);
                     td.textContent = date.toLocaleDateString('es-ES');
                 } 
                 // Solo convertir a Sí/No si es una columna de estado o booleana
-                else if ((columnName === 'status' || columnName.endsWith('_active') || columnName.endsWith('_status')) && (cell === 1 || cell === 0)) {
-                    td.textContent = cell ? 'Sí' : 'No';
+                else if ((column === 'status' || column.endsWith('_active') || column.endsWith('_status')) && (value === 1 || value === 0)) {
+                    td.textContent = value ? 'Sí' : 'No';
                     td.classList.add('text-center');
                 }
                 // Para cualquier otro valor, incluyendo IDs
                 else {
-                    td.textContent = cell !== null ? cell : 'NULL';
+                    td.textContent = value !== null ? value : 'NULL';
                 }
-                
+
                 tr.appendChild(td);
             });
-            
+
             tbody.appendChild(tr);
         });
-        
+
         // Mostrar información de la consulta
         showQueryInfo(`Consulta ejecutada correctamente. ${values.length} fila${values.length !== 1 ? 's' : ''} devuelta${values.length !== 1 ? 's' : ''}.`);
-        
+
     } catch (error) {
         console.error('Error al ejecutar la consulta:', error);
-        showError('Error en la consulta SQL: ' + error.message);
+        showError('Error en la consulta: ' + error.message);
     }
 }
+
+// Inicializar la aplicación cuando la página esté cargada
+document.addEventListener('DOMContentLoaded', () => {
+    initEditor();
+});
 
 // Mostrar mensaje de error
 function showError(message) {
@@ -232,7 +225,10 @@ async function loadQueriesHistory() {
     try {
         updateFileStatus('Cargando historial...', 'info');
         const response = await fetch('/api/queries');
-        if (!response.ok) throw new Error('No se pudo cargar el historial');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al cargar el historial');
+        }
         
         const data = await response.json();
         queriesHistory = data.queries || [];
@@ -254,318 +250,73 @@ async function loadQueriesHistory() {
 
 // Función para obtener la última consulta del archivo
 function getLastQuery(content) {
-    if (!content) return '';
-    
-    // Dividir por líneas y filtrar líneas vacías y comentarios
-    const lines = content
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line && !line.startsWith('--'));
-    
-    // Devolver la última línea no vacía
-    return lines[lines.length - 1] || '';
+if (!content) return '';
+
+// Dividir por líneas y filtrar líneas vacías y comentarios
+const lines = content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('--'));
+
+// Devolver la última línea no vacía
+return lines[lines.length - 1] || '';
 }
 
 // Función para verificar si hay nuevas consultas
 async function checkForNewQueries() {
-    try {
-        const response = await fetch(`/api/queries/check?t=${new Date().getTime()}`);
-        if (!response.ok) return false;
-        
-        const data = await response.json();
-        
-        if (data.lastModified > lastModifiedTime) {
-            lastModifiedTime = data.lastModified;
-            
-            // Si hay una nueva consulta, actualizar el historial
-            if (data.lastQuery && data.lastQuery !== currentQuery) {
-                currentQuery = data.lastQuery;
-                await loadQueriesHistory();
-                return true;
-            }
+try {
+    const response = await fetch(`/api/queries/check?t=${new Date().getTime()}`);
+    if (!response.ok) return false;
+
+    const data = await response.json();
+
+    if (data.lastModified > lastModifiedTime) {
+        lastModifiedTime = data.lastModified;
+
+        // Si hay una nueva consulta, actualizar el historial
+        if (data.lastQuery && data.lastQuery !== currentQuery) {
+            currentQuery = data.lastQuery;
+            await loadQueriesHistory();
+            return true;
         }
-        return false;
-    } catch (error) {
-        console.error('Error al verificar consultas:', error);
-        return false;
     }
+    return false;
+} catch (error) {
+    console.error('Error al verificar consultas:', error);
+    return false;
+}
 }
 
 // Función para ejecutar la consulta actual
 async function executeCurrentQuery() {
     const query = editor.getValue().trim();
     if (!query) return;
-    
+
     try {
-        updateFileStatus('Guardando consulta...', 'info');
-        
-        // Guardar la consulta en el servidor
-        const response = await fetch('/api/queries', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query })
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al guardar la consulta');
-        }
-        
-        // Actualizar el historial
-        const data = await response.json();
-        queriesHistory = data.queries;
-        updateQueriesHistory();
-        
-        // Ejecutar la consulta
-        executeQuery();
-        updateFileStatus('Consulta guardada', 'success');
+        updateFileStatus('Ejecutando consulta...', 'info');
+        await executeQuery();
+        updateFileStatus('Consulta ejecutada', 'success');
     } catch (error) {
-        console.error('Error al guardar la consulta:', error);
-        updateFileStatus('Error al guardar', 'danger');
+        console.error('Error al ejecutar la consulta:', error);
+        updateFileStatus('Error al ejecutar', 'danger');
     }
 }
 
 // Función para actualizar el estado del archivo en la interfaz
 function updateFileStatus(message, type = 'info') {
-    const statusElement = document.getElementById('fileStatus');
-    if (!statusElement) return;
-    
-    statusElement.textContent = message;
-    statusElement.className = `badge bg-${type} text-${type === 'light' ? 'dark' : 'white'} ms-2`;
-    
-    // Restaurar el estado después de 3 segundos
-    if (type !== 'info') {
-        setTimeout(() => {
-            if (statusElement.textContent === message) {
-                statusElement.textContent = 'Listo';
-                statusElement.className = 'badge bg-light text-dark ms-2';
-            }
-        }, 3000);
-    }
-}
+const statusElement = document.getElementById('fileStatus');
+if (!statusElement) return;
 
-// Función para actualizar la marca de tiempo de la última actualización
-function updateLastUpdated() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-    
-    const dateElement = document.getElementById('lastUpdated');
-    if (dateElement) {
-        dateElement.textContent = `Última actualización: ${timeString}`;
-    }
-}
+statusElement.textContent = message;
+statusElement.className = `badge bg-${type} text-${type === 'light' ? 'dark' : 'white'} ms-2`;
 
-// Función para actualizar la interfaz del historial de consultas
-function updateQueriesHistory() {
-    const historyList = document.getElementById('queriesHistory');
-    const queryCountElement = document.getElementById('queryCount');
-    
-    if (!historyList || !queryCountElement) return;
-    
-    // Actualizar el contador de consultas
-    queryCountElement.textContent = queriesHistory.length;
-    
-    // Limpiar la lista
-    historyList.innerHTML = '';
-    
-    // Mostrar mensaje si no hay consultas
-    if (queriesHistory.length === 0) {
-        historyList.innerHTML = `
-            <li class="text-muted text-center py-4">
-                <i class="bi bi-clock-history d-block mb-2" style="font-size: 2rem;"></i>
-                No hay consultas en el historial
-            </li>`;
-        return;
-    }
-    
-    // Mostrar consultas en orden inverso (la más reciente primero)
-    queriesHistory.slice().reverse().forEach((query, index) => {
-        const li = document.createElement('li');
-        li.className = 'query-item';
-        li.title = query;
-        
-        // Crear contenedor para el contenido
-        const content = document.createElement('div');
-        content.style.display = 'flex';
-        content.style.alignItems = 'center';
-        content.style.width = '100%';
-        
-        // Crear texto de la consulta
-        const text = document.createElement('span');
-        text.className = 'query-text';
-        text.textContent = query;
-        text.style.flex = '1';
-        text.style.overflow = 'hidden';
-        text.style.textOverflow = 'ellipsis';
-        text.style.whiteSpace = 'nowrap';
-        
-        // Añadir elementos al LI
-        content.appendChild(text);
-        li.appendChild(content);
-        
-        // Resaltar la consulta actual
-        if (query === editor.getValue().trim()) {
-            li.style.backgroundColor = '#f8f9fa';
-            li.style.fontWeight = '600';
+// Restaurar el estado después de 3 segundos
+if (type !== 'info') {
+    setTimeout(() => {
+        if (statusElement.textContent === message) {
+            statusElement.textContent = 'Listo';
+            statusElement.className = 'badge bg-light text-dark ms-2';
         }
-        
-        // Al hacer clic en una consulta del historial
-        li.addEventListener('click', () => {
-            // Establecer la consulta en el editor
-            editor.setValue(query);
-            
-            // Resaltar la consulta seleccionada
-            document.querySelectorAll('#queriesHistory li').forEach(item => {
-                item.style.backgroundColor = '';
-                item.style.fontWeight = '';
-            });
-            li.style.backgroundColor = '#f8f9fa';
-            li.style.fontWeight = '600';
-            
-            // Desplazar la vista a la consulta seleccionada
-            li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            
-            // Ejecutar la consulta automáticamente
-            executeQuery();
-        });
-        
-        historyList.appendChild(li);
-    });
+    }, 3000);
 }
-
-// Función para limpiar el historial
-async function clearHistory() {
-    // Mostrar el modal de confirmación
-    const modal = new bootstrap.Modal(document.getElementById('confirmClearModal'));
-    modal.show();
 }
-
-// Función que realiza la limpieza del historial
-async function performHistoryClear() {
-    try {
-        // Limpiar el array en memoria
-        queriesHistory = [];
-        
-        // Limpiar la interfaz
-        const historyList = document.getElementById('queriesList');
-        if (historyList) {
-            historyList.innerHTML = '';
-        }
-        
-        // Limpiar el archivo de historial en el servidor
-        const response = await fetch('/api/queries', {
-            method: 'DELETE'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Error al limpiar el historial en el servidor');
-        }
-        
-        // Limpiar el localStorage del navegador
-        if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem('sqlQueryHistory');
-        }
-        
-        // Actualizar la interfaz
-        updateQueriesHistory();
-        updateFileStatus('Historial eliminado correctamente', 'success');
-        
-        // Actualizar el estado de última modificación
-        lastModifiedTime = 0;
-        
-        // Cerrar el modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmClearModal'));
-        if (modal) {
-            modal.hide();
-        }
-        
-    } catch (error) {
-        console.error('Error al limpiar el historial:', error);
-        updateFileStatus('Error al limpiar el historial: ' + error.message, 'danger');
-        
-        // Cerrar el modal en caso de error
-        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmClearModal'));
-        if (modal) {
-            modal.hide();
-        }
-    }
-}
-
-// Función para alternar la visibilidad del historial
-function toggleHistory() {
-    const historyContainer = document.querySelector('.history-container');
-    const toggleButton = document.getElementById('toggleHistory');
-    
-    if (!historyContainer || !toggleButton) return;
-    
-    // Alternar la clase 'visible' para mostrar/ocultar el historial
-    const isVisible = historyContainer.classList.toggle('visible');
-    
-    // Actualizar el ícono y el texto del botón
-    if (isVisible) {
-        toggleButton.innerHTML = '<i class="bi bi-chevron-up me-1"></i> Ocultar historial';
-        // Asegurarse de que el historial esté actualizado cuando se muestra
-        loadQueriesHistory();
-    } else {
-        toggleButton.innerHTML = '<i class="bi bi-chevron-down me-1"></i> Mostrar historial';
-    }
-}
-
-// Inicializar la aplicación
-async function initApp() {
-    // Configurar el botón de limpiar historial
-    const clearHistoryBtn = document.getElementById('clearHistory');
-    if (clearHistoryBtn) {
-        clearHistoryBtn.addEventListener('click', clearHistory);
-    }
-    
-    // Configurar el botón de confirmación del modal
-    const confirmClearBtn = document.getElementById('confirmClearBtn');
-    if (confirmClearBtn) {
-        confirmClearBtn.addEventListener('click', performHistoryClear);
-    }
-    try {
-        // Inicializar el editor de código
-        initCodeEditor();
-        
-        // Configurar eventos
-        document.getElementById('executeQuery').addEventListener('click', executeCurrentQuery);
-        document.getElementById('toggleHistory').addEventListener('click', toggleHistory);
-        
-        // Inicializar la base de datos
-        const dbInitialized = await initDatabase();
-        
-        if (dbInitialized) {
-            // Cargar el historial de consultas
-            await loadQueriesHistory();
-            
-            // Si hay consultas previas, ejecutar la última
-            if (currentQuery) {
-                executeQuery();
-            }
-            
-            // Verificar nuevas consultas cada 2 segundos
-            fileChangeInterval = setInterval(async () => {
-                try {
-                    const hasNewQuery = await checkForNewQueries();
-                    if (hasNewQuery) {
-                        console.log('Nueva consulta detectada, ejecutando...');
-                        executeQuery();
-                    }
-                } catch (error) {
-                    console.error('Error al verificar consultas:', error);
-                }
-            }, 2000);
-        }
-    } catch (error) {
-        console.error('Error al inicializar la aplicación:', error);
-        showError('Error al inicializar la aplicación: ' + error.message);
-    }
-}
-
-// Iniciar la aplicación cuando el DOM esté cargado
-document.addEventListener('DOMContentLoaded', initApp);

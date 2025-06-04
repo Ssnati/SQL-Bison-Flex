@@ -1,2 +1,4 @@
-leer todo de users;
-leer todo de users;
+leer todos de users;
+leer todos de users
+leer todos de users
+leer todos de users
