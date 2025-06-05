@@ -66,6 +66,37 @@ body {
     margin-bottom: 0;
 }
 
+/* Estilos para la sección de créditos */
+.credits-section {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    margin-top: 3rem;
+}
+
+.credits-names {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.credits-names span {
+    font-size: 0.9rem;
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.credits-names span:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+}
+
 /* Ajustes responsivos */
 @media (max-width: 992px) {
     .content-wrapper {
