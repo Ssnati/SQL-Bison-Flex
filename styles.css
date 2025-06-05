@@ -5,6 +5,104 @@ body {
     padding: 1rem 0;
 }
 
+/* Estilos para el contenedor principal */
+.content-wrapper {
+    width: 100%;
+    margin: 0 0 2rem 0;
+}
+
+.text-content {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Estilos para las secciones dentro del alert */
+.alert-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.instructions-section {
+    width: 100%;
+}
+
+/* Estilos para el esquema en la vista previa */
+.schema-preview {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.schema-preview strong {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: #0c5460;
+}
+
+.schema-image {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px; /* Ajusta según necesites */
+}
+
+.schema-image img {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
+/* Estilos para el alert de advertencia */
+.alert-warning {
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 992px) {
+    .content-wrapper {
+        flex-direction: column;
+    }
+    
+    .image-content {
+        flex: 1 1 100%;
+        max-width: 100%;
+        margin: 20px 0;
+        position: static;
+        order: 1;
+    }
+    
+    .text-content {
+        order: 2;
+    }
+}
+
+/* Mejoras para la legibilidad */
+.alert-info {
+    padding: 1.5rem;
+}
+
+.alert-info ul {
+    margin-bottom: 1rem;
+}
+
+.alert-info li {
+    margin-bottom: 0.25rem;
+    line-height: 1.5;
+}
+
+.alert-warning {
+    margin-top: 1.5rem;
+}
+
 /* Contenedor principal más estrecho */
 .container-fluid {
     max-width: 98%;

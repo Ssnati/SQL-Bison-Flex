@@ -132,5 +132,5 @@ La base de datos está compuesta por las siguientes tablas relacionadas:
 
 
 <div align="center">
-  Hecho con ❤️ por Ssnati
+  Hecho con ❤️ por Ssnati y Karen
 </div>
